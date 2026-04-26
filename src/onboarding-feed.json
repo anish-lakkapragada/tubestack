@@ -1,0 +1,105 @@
+{
+  "platformPrefix": "you",
+  "platformSuffix": "binge",
+  "platformAccent": "binge",
+  "introQuery": "what do I want you to watch?",
+  "tags": ["we", "decide", "what", "you", "watch", "next"],
+  "sections": [
+    {
+      "type": "grid",
+      "items": [
+        {
+          "kicker": "recommended",
+          "title": "feeds are not neutral",
+          "meta": "847k views · because you opened the app",
+          "duration": "12:04",
+          "tone": "main",
+          "thumbnailText": "FEEDS ARE NOT NEUTRAL",
+          "channel": "transparent tech",
+          "avatar": "tt"
+        },
+        {
+          "kicker": "up next",
+          "title": "autoplay is a choice someone made",
+          "meta": "1.2m views · up next",
+          "duration": "8:31",
+          "tone": "noise",
+          "thumbnailText": "AUTOPLAY IS A DECISION",
+          "channel": "quiet tools",
+          "avatar": "qt"
+        },
+        {
+          "kicker": "because you searched",
+          "title": "the search bar is a promise",
+          "meta": "402k views · recommended",
+          "duration": "9:46",
+          "tone": "feed",
+          "thumbnailText": "SEARCH IS CONSENT",
+          "channel": "manual mode",
+          "avatar": "mm"
+        }
+      ]
+    },
+    {
+      "type": "shorts",
+      "title": "shorts",
+      "items": [
+        { "title": "one more minute", "views": "3.4m views", "tone": "red" },
+        { "title": "keep scrolling", "views": "7.1m views", "tone": "yellow" },
+        { "title": "almost done", "views": "1.8m views", "tone": "purple" },
+        { "title": "new clip", "views": "12m views", "tone": "blue" },
+        { "title": "stay here", "views": "980k views", "tone": "green" }
+      ]
+    },
+    {
+      "type": "shelf",
+      "title": "recommended",
+      "subtitle": "new reasons to keep watching",
+      "items": [
+        {
+          "kicker": "live",
+          "title": "transparent tools are quieter",
+          "meta": "44k views · watched",
+          "duration": "8:08",
+          "tone": "dark",
+          "thumbnailText": "TOOLS SHOULD BE SERVANTS",
+          "channel": "no feed daily",
+          "avatar": "nf"
+        },
+        {
+          "kicker": "shorts remix",
+          "title": "curiosity should not become a corridor",
+          "meta": "780k views · because you paused",
+          "duration": "10:08",
+          "tone": "blue",
+          "thumbnailText": "CURIOSITY OR CORRIDOR?",
+          "channel": "doorway media",
+          "avatar": "dm"
+        },
+        {
+          "kicker": "sponsored",
+          "title": "you will not believe what happens next",
+          "meta": "7.8m views · autoplay waiting",
+          "duration": "0:58",
+          "tone": "green",
+          "thumbnailText": "ONE MORE VIDEO",
+          "channel": "attention market",
+          "avatar": "am"
+        }
+      ]
+    },
+    {
+      "type": "final",
+      "item": {
+        "kicker": "watch again",
+        "title": "choose the question yourself",
+        "meta": "saved from the feed",
+        "duration": "5:00",
+        "tone": "final",
+        "thumbnailText": "CHOOSE THE QUESTION YOURSELF",
+        "channel": "tubestack",
+        "avatar": "ts"
+      }
+    }
+  ]
+}

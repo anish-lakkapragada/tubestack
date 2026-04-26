@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <clipPath id="play-triangle">
+      <path d="M196 166 L196 346 L376 256 Z"/>
+    </clipPath>
+  </defs>
+  <rect x="38" y="38" width="436" height="436" rx="92" fill="#FFFDF8"/>
+  <rect x="38" y="38" width="436" height="436" rx="92" stroke="#E7DFD0" stroke-width="8"/>
+  <rect x="70" y="130" width="372" height="252" rx="58" fill="#FF6719"/>
+  <rect x="70" y="130" width="372" height="252" rx="58" stroke="#E35413" stroke-width="8"/>
+  <path d="M196 166 L196 346 L376 256 Z" fill="#FFF9F0"/>
+  <g clip-path="url(#play-triangle)">
+    <rect x="196" y="196" width="190" height="20" rx="2" fill="#FF6719"/>
+    <rect x="196" y="246" width="190" height="20" rx="2" fill="#FF6719"/>
+    <rect x="196" y="296" width="190" height="20" rx="2" fill="#FF6719"/>
+  </g>
+</svg>
