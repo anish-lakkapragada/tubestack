@@ -7,8 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "node scripts/tauri.mjs",
-    "friend-dmg": "bash scripts/build-friend-dmg.sh"
+    "tauri": "node scripts/tauri.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2",
