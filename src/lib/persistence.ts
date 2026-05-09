@@ -16,6 +16,8 @@ const LEGACY_WATCH_LATER_KEY = "watchLater";
 const LEGACY_MIGRATED_KEY = "storageMigratedToFs";
 
 const fsOpts = { baseDir: BaseDirectory.AppData };
+const FRESH_STORAGE = import.meta.env.VITE_TUBESTACK_FRESH === "1";
+let freshStorageCleared: Promise<void> | null = null;
 
 async function ensureAppDataDir(): Promise<void> {
   try {
@@ -44,6 +46,21 @@ async function writeJSONFile<T>(path: string, value: T): Promise<void> {
   await writeTextFile(path, JSON.stringify(value, null, 2), fsOpts);
 }
 
+async function clearFreshStorage(): Promise<void> {
+  if (!FRESH_STORAGE) return;
+  if (!freshStorageCleared) {
+    freshStorageCleared = (async () => {
+      await writeJSONFile(HISTORY_FILE, []);
+      await writeJSONFile(READ_LATER_FILE, []);
+      try {
+        localStorage.removeItem(LEGACY_HISTORY_KEY);
+        localStorage.removeItem(LEGACY_WATCH_LATER_KEY);
+      } catch {}
+    })();
+  }
+  await freshStorageCleared;
+}
+
 function readLegacyArray<T>(key: string): T[] | null {
   try {
     const raw = localStorage.getItem(key);
@@ -68,22 +85,32 @@ async function migrateLegacyOnce<T>(file: string, legacyKey: string): Promise<T[
 }
 
 export async function loadHistory<T>(): Promise<T[]> {
+  if (FRESH_STORAGE) {
+    await clearFreshStorage();
+    return [];
+  }
   await ensureAppDataDir();
   await migrateLegacyOnce<T>(HISTORY_FILE, LEGACY_HISTORY_KEY);
   return readJSONFile<T[]>(HISTORY_FILE, []);
 }
 
 export async function saveHistory<T>(history: T[]): Promise<void> {
+  if (FRESH_STORAGE) return;
   await writeJSONFile(HISTORY_FILE, history);
 }
 
 export async function loadReadLater<T>(): Promise<T[]> {
+  if (FRESH_STORAGE) {
+    await clearFreshStorage();
+    return [];
+  }
   await ensureAppDataDir();
   await migrateLegacyOnce<T>(READ_LATER_FILE, LEGACY_WATCH_LATER_KEY);
   return readJSONFile<T[]>(READ_LATER_FILE, []);
 }
 
 export async function saveReadLater<T>(items: T[]): Promise<void> {
+  if (FRESH_STORAGE) return;
   await writeJSONFile(READ_LATER_FILE, items);
 }
 

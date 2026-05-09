@@ -1,7 +1,7 @@
 import { ReactNode, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { appCacheDir, appDataDir, join } from "@tauri-apps/api/path";
-import { openPath } from "@tauri-apps/plugin-opener";
+import { appDataDir, dirname, join } from "@tauri-apps/api/path";
+import { openPath, revealItemInDir } from "@tauri-apps/plugin-opener";
 import { useApp } from "../lib/AppContext";
 import { STORAGE_FILES } from "../lib/persistence";
 
@@ -31,41 +31,80 @@ function timeLabel(ts: number): string {
   }).toLowerCase();
 }
 
+function BookmarkIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+
 interface SidebarFrameProps {
   title: string;
-  subtitle: string;
-  eyebrow?: string;
+  description: string;
+  storageFile: string;
+  storageLabel: string;
   onClose: () => void;
-  onClear?: () => void;
-  clearDisabled?: boolean;
   children: ReactNode;
 }
 
-function SidebarFrame({ title, subtitle, eyebrow, onClose, onClear, clearDisabled, children }: SidebarFrameProps) {
+function SidebarFrame({ title, description, storageFile, storageLabel, onClose, children }: SidebarFrameProps) {
+  const [closing, setClosing] = useState(false);
+  const [storagePath, setStoragePath] = useState("");
+
+  function closeWithAnimation() {
+    setClosing(true);
+    window.setTimeout(onClose, 220);
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    async function resolveStoragePath() {
+      try {
+        const dir = await appDataDir();
+        const path = await join(dir, storageFile);
+        if (!cancelled) setStoragePath(path);
+      } catch {
+        if (!cancelled) setStoragePath(storageFile);
+      }
+    }
+    void resolveStoragePath();
+    return () => { cancelled = true; };
+  }, [storageFile]);
+
+  async function openStorageLocation() {
+    if (!storagePath) return;
+    try {
+      await revealItemInDir(storagePath);
+    } catch {
+      try {
+        await openPath(await dirname(storagePath));
+      } catch {}
+    }
+  }
+
   return (
     <>
-      <div className="sidebar-scrim" onClick={onClose} />
-      <aside className="sidebar">
+      <div className={`sidebar-scrim ${closing ? "closing" : ""}`} onClick={closeWithAnimation} />
+      <aside className={`sidebar ${closing ? "closing" : ""}`}>
         <header className="sidebar-header">
-          {eyebrow && <span className="sidebar-eyebrow">{eyebrow}</span>}
-          <div className="sidebar-title-row">
+          <button onClick={closeWithAnimation} className="sidebar-close" aria-label="close">×</button>
+          <div className="sidebar-heading">
             <span className="sidebar-title">{title}</span>
-            <button onClick={onClose} className="sidebar-close" aria-label="close">×</button>
+            {storagePath && (
+              <button
+                type="button"
+                className="sidebar-storage-path"
+                onClick={openStorageLocation}
+                title={storagePath}
+              >
+                {storageLabel}
+              </button>
+            )}
+            <span className="sidebar-description">{description}</span>
           </div>
-          <span className="sidebar-subtitle">{subtitle}</span>
         </header>
         <div className="sidebar-body">{children}</div>
-        {onClear && (
-          <footer className="sidebar-footer">
-            <button
-              onClick={() => { if (!clearDisabled && confirm(`clear ${title.toLowerCase()}?`)) onClear(); }}
-              disabled={clearDisabled}
-              className="sidebar-clear"
-            >
-              clear all
-            </button>
-          </footer>
-        )}
       </aside>
     </>
   );
@@ -106,45 +145,8 @@ function Row({ slot, title, dateLabel, meta, active, onClick, onRemove }: RowPro
   );
 }
 
-function StorageFolderLinks({ jsonFile }: { jsonFile?: string }) {
-  const [paths, setPaths] = useState<{ appData?: string; appCache?: string; jsonPath?: string }>({});
-
-  useEffect(() => {
-    let alive = true;
-    Promise.allSettled([appDataDir(), appCacheDir()]).then(async ([data, cache]) => {
-      if (!alive) return;
-      const appData = data.status === "fulfilled" ? data.value : undefined;
-      const jsonPath = appData && jsonFile ? await join(appData, jsonFile).catch(() => undefined) : undefined;
-      setPaths({
-        appData,
-        appCache: cache.status === "fulfilled" ? cache.value : undefined,
-        jsonPath,
-      });
-    });
-    return () => { alive = false; };
-  }, [jsonFile]);
-
-  return (
-    <div className="sidebar-storage-links" aria-label="storage folders">
-      <div>
-        {jsonFile && (
-          <button type="button" disabled={!paths.jsonPath} onClick={() => paths.jsonPath && openPath(paths.jsonPath!)}>
-            open {jsonFile}
-          </button>
-        )}
-        <button type="button" disabled={!paths.appData} onClick={() => paths.appData && openPath(paths.appData!)}>
-          app data
-        </button>
-        <button type="button" disabled={!paths.appCache} onClick={() => paths.appCache && openPath(paths.appCache!)}>
-          cache
-        </button>
-      </div>
-    </div>
-  );
-}
-
 export function HistorySidebar() {
-  const { history, removeHistoryEntry, clearHistory, closeSidebar } = useApp();
+  const { history, removeHistoryEntry, closeSidebar } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
   const here = location.pathname + location.search;
@@ -152,23 +154,20 @@ export function HistorySidebar() {
   return (
     <SidebarFrame
       title="History"
-      eyebrow="recently watched"
-      subtitle={history.length === 0 ? "nothing watched yet" : `${history.length} watched item${history.length === 1 ? "" : "s"}`}
+      description="what you've read recently"
+      storageFile={STORAGE_FILES.history}
+      storageLabel="open history.json"
       onClose={closeSidebar}
-      onClear={clearHistory}
-      clearDisabled={history.length === 0}
     >
-      <StorageFolderLinks jsonFile={STORAGE_FILES.history} />
       {history.length === 0 ? (
-        <p className="sidebar-empty">open a video or short and it will show up here.</p>
+        <p className="sidebar-empty">open an article and it will show up here.</p>
       ) : (
         history.map((h, index) => (
           <Row
             key={`${h.path}-${h.ts}`}
             slot={String(index + 1).padStart(2, "0")}
             title={h.title}
-            dateLabel={relLabel(h.ts)}
-            meta={timeLabel(h.ts)}
+            dateLabel={`${relLabel(h.ts)} ${timeLabel(h.ts)}`}
             active={h.path === here}
             onClick={() => { navigate(h.path); closeSidebar(); }}
             onRemove={() => removeHistoryEntry(h.path, h.ts)}
@@ -180,7 +179,7 @@ export function HistorySidebar() {
 }
 
 export function WatchLaterSidebar() {
-  const { watchLater, removeFromWatchLater, clearWatchLater, closeSidebar } = useApp();
+  const { watchLater, removeFromWatchLater, closeSidebar } = useApp();
   const location = useLocation();
   const navigate = useNavigate();
   const here = location.pathname + location.search;
@@ -188,15 +187,15 @@ export function WatchLaterSidebar() {
   return (
     <SidebarFrame
       title="Read later"
-      eyebrow="stack"
-      subtitle={watchLater.length === 0 ? "nothing queued" : `${watchLater.length} queued · newest first`}
+      description="what to read next"
+      storageFile={STORAGE_FILES.readLater}
+      storageLabel="open read-later.json"
       onClose={closeSidebar}
-      onClear={clearWatchLater}
-      clearDisabled={watchLater.length === 0}
     >
-      <StorageFolderLinks jsonFile={STORAGE_FILES.readLater} />
       {watchLater.length === 0 ? (
-        <p className="sidebar-empty">use the + button on a video, short, or result to push it here.</p>
+        <p className="sidebar-empty">
+          hit <span className="sidebar-empty-icon"><BookmarkIcon /></span> on an article or result to push it here.
+        </p>
       ) : (
         watchLater.map((v, index) => {
           const path = `/watch?v=${v.id}`;
@@ -205,8 +204,8 @@ export function WatchLaterSidebar() {
               key={v.id}
               slot={index === 0 ? "up" : String(index + 1).padStart(2, "0")}
               title={v.title}
-              dateLabel={relLabel(v.addedAt)}
-              meta={v.channelTitle || timeLabel(v.addedAt)}
+              dateLabel={`${relLabel(v.addedAt)} ${timeLabel(v.addedAt)}`}
+              meta={v.channelTitle}
               active={path === here}
               onClick={() => { navigate(path); closeSidebar(); }}
               onRemove={() => removeFromWatchLater(v.id)}

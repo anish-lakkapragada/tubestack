@@ -2,8 +2,8 @@
   "platformPrefix": "you",
   "platformSuffix": "binge",
   "platformAccent": "binge",
-  "introQuery": "what do I want you to watch?",
-  "tags": ["we", "decide", "what", "you", "watch", "next"],
+  "introQuery": "what do I want you to read?",
+  "tags": ["we", "decide", "what", "you", "read", "next"],
   "sections": [
     {
       "type": "grid",
@@ -54,12 +54,12 @@
     {
       "type": "shelf",
       "title": "recommended",
-      "subtitle": "new reasons to keep watching",
+      "subtitle": "new reasons to keep reading",
       "items": [
         {
           "kicker": "live",
           "title": "transparent tools are quieter",
-          "meta": "44k views · watched",
+          "meta": "44k views · read",
           "duration": "8:08",
           "tone": "dark",
           "thumbnailText": "TOOLS SHOULD BE SERVANTS",
@@ -91,7 +91,7 @@
     {
       "type": "final",
       "item": {
-        "kicker": "watch again",
+        "kicker": "read again",
         "title": "choose the question yourself",
         "meta": "saved from the feed",
         "duration": "5:00",

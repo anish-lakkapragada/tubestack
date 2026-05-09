@@ -2,103 +2,34 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { VideoDetail, TranscriptSegment, getVideoInfo, getTranscript } from "../lib/youtube";
 import { useApp, useLogVisit } from "../lib/AppContext";
+import { toParagraphs } from "../lib/transcriptFormat";
 import BackButton from "../components/BackButton";
+import { OPEN_ARTICLE_FIND_EVENT } from "../components/ArticleFind";
 
-// YouTube auto-captions (ASR) come back lowercase, unpunctuated, and littered
-// with [music]/[applause] annotations. We reconstruct prose by:
-//   1. stripping bracket annotations and speaker tags (">>")
-//   2. fixing lone "i" → "I" and contractions
-//   3. inferring sentence breaks from timestamp *gaps* between segments — YT
-//      emits each caption roughly when someone stops speaking, so a >650ms
-//      gap is almost always a sentence boundary
-//   4. capitalizing the first letter of each inferred sentence
-//   5. grouping ~4 sentences into each paragraph
-// Manual (non-ASR) captions already have punctuation and capitalization, so
-// the logic is a no-op on those — it only helps, never hurts.
-const BRACKET_NOISE = /\[(?:music|applause|laughter|cheering|background [^\]]*|inaudible|noise|silence|pause|sigh|sighs|coughing)\]/gi;
-const SOFT_SENTENCE_START = /\b(?:okay|ok|so|well|now|today|thanks|thank you|just a quick announcement|anything you want to add|let's|lets|if you have questions|coming up|you can sign up|we have|we're|were|you describe yourself|you got|you went on|which firm|very close|no no)\b/i;
-const HARD_SENTENCE_END = /[.?!]["')\]]?$/;
-
-function cleanSegment(text: string): string {
-  let t = text.replace(BRACKET_NOISE, " ").replace(/>>+/g, " ").replace(/\n/g, " ").replace(/\s+/g, " ").trim();
-  t = t.replace(/\b(um|uh|erm|hmm)\b/gi, " ");
-  t = t.replace(/\bi\b/g, "I");
-  t = t.replace(/\bi(['’])(m|ve|ll|d|s|re)\b/gi, (_, apo, suffix) => "I" + apo + suffix.toLowerCase());
-  return t.replace(/\s+/g, " ").trim();
+function CopyIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden>
+      <rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" strokeWidth="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
 }
 
-function toParagraphs(transcript: TranscriptSegment[]): string[] {
-  if (transcript.length === 0) return [];
-
-  const sentences: string[] = [];
-  let current: string[] = [];
-  let wordCount = 0;
-
-  for (let i = 0; i < transcript.length; i++) {
-    const seg = transcript[i];
-    const text = cleanSegment(seg.text);
-    if (!text) continue;
-
-    current.push(text);
-    wordCount += text.split(/\s+/).length;
-
-    const next = transcript[i + 1];
-    const nextText = next ? cleanSegment(next.text) : "";
-    const gap = next ? next.startMs - seg.endMs : 0;
-    const shouldBreak =
-      !next ||
-      HARD_SENTENCE_END.test(text) ||
-      gap > 850 ||
-      wordCount >= 28 ||
-      (wordCount >= 12 && gap > 420 && SOFT_SENTENCE_START.test(nextText));
-
-    if (shouldBreak) {
-      sentences.push(finishSentence(current.join(" ")));
-      current = [];
-      wordCount = 0;
-    }
-  }
-
-  if (current.length > 0) sentences.push(finishSentence(current.join(" ")));
-
-  const cleaned = sentences
-    .map((s) => s.replace(/\s+([.?!,;:])/g, "$1").replace(/\s+/g, " ").trim())
-    .filter(Boolean)
-    .map((s) => s.charAt(0).toUpperCase() + s.slice(1));
-
-  if (cleaned.length === 0) return [];
-
-  return groupSentences(cleaned);
+function BookmarkIcon({ filled = false }: { filled?: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" width="17" height="17" fill={filled ? "currentColor" : "none"} aria-hidden>
+      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    </svg>
+  );
 }
 
-function finishSentence(text: string): string {
-  const t = text
-    .replace(/\s+([.?!,;:])/g, "$1")
-    .replace(/([.?!])\s*([.?!])+/g, "$1")
-    .replace(/\s+/g, " ")
-    .trim();
-  if (!t) return "";
-  return HARD_SENTENCE_END.test(t) ? t : `${t}.`;
-}
-
-function groupSentences(sentences: string[]): string[] {
-  const paragraphs: string[] = [];
-  let current: string[] = [];
-  let words = 0;
-
-  for (const sentence of sentences) {
-    const sentenceWords = sentence.split(/\s+/).length;
-    if (current.length > 0 && (current.length >= 3 || words + sentenceWords > 72)) {
-      paragraphs.push(current.join(" "));
-      current = [];
-      words = 0;
-    }
-    current.push(sentence);
-    words += sentenceWords;
-  }
-  if (current.length > 0) paragraphs.push(current.join(" "));
-
-  return paragraphs;
+function SearchIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden>
+      <circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" strokeWidth="2" />
+      <path d="M15.5 15.5L21 21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
 }
 
 export default function Watch() {
@@ -109,6 +40,7 @@ export default function Watch() {
   const [loading, setLoading] = useState(true);
   const [transcriptLoading, setTranscriptLoading] = useState(true);
   const [transcriptError, setTranscriptError] = useState("");
+  const [copyState, setCopyState] = useState<"article" | "error" | null>(null);
   const { watchLater, addToWatchLater, removeFromWatchLater } = useApp();
   const saved = watchLater.some((e) => e.id === videoId);
   useLogVisit(info?.title ?? null);
@@ -130,6 +62,24 @@ export default function Watch() {
   }, [videoId]);
 
   const paragraphs = useMemo(() => toParagraphs(transcript), [transcript]);
+  const transcriptText = useMemo(() => paragraphs.join("\n\n"), [paragraphs]);
+
+  async function copyArticle() {
+    if (!transcriptText) return;
+    try {
+      await navigator.clipboard.writeText(transcriptText);
+      setCopyState("article");
+      window.setTimeout(() => setCopyState(null), 1400);
+    } catch (e) {
+      console.error(e);
+      setCopyState("error");
+      window.setTimeout(() => setCopyState(null), 1800);
+    }
+  }
+
+  function openArticleFind() {
+    window.dispatchEvent(new Event(OPEN_ARTICLE_FIND_EVENT));
+  }
 
   if (!videoId) {
     return (
@@ -140,26 +90,15 @@ export default function Watch() {
   }
 
   return (
-    <main style={{ maxWidth: "680px", margin: "0 auto", padding: "48px 24px", paddingTop: "64px", paddingBottom: "120px" }}>
+    <main className="reader-article-page">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
         <BackButton />
-        {info && (
-          <button
-            onClick={() => saved
-              ? removeFromWatchLater(videoId)
-              : addToWatchLater({ id: videoId, title: info.title, channelTitle: info.channelTitle })
-            }
-            style={{ background: "none", border: "none", color: "var(--muted)", fontSize: "0.8125rem", textDecoration: "underline", textUnderlineOffset: "2px" }}
-          >
-            {saved ? "− remove from read later" : "+ read later"}
-          </button>
-        )}
       </div>
 
       <article style={{ marginTop: "32px" }}>
         <header style={{ marginBottom: "36px" }}>
           {info && (
-            <p style={{ fontSize: "0.8125rem", color: "var(--muted)", marginBottom: "10px" }}>
+            <p className="reader-article-meta">
               {info.channelId ? (
                 <Link to={`/channel?id=${info.channelId}`} style={{ color: "var(--muted)", textDecoration: "underline", textUnderlineOffset: "2px" }}>
                   {info.channelTitle}
@@ -168,15 +107,51 @@ export default function Watch() {
               {info.viewCount && <> · {Number(info.viewCount).toLocaleString()} views</>}
             </p>
           )}
-          <h1 style={{ fontSize: "1.75rem", fontWeight: 700, color: "var(--text)", lineHeight: 1.3, letterSpacing: "-0.02em" }}>
+          <h1 className="reader-article-title">
             {info?.title || (loading ? "loading…" : "untitled")}
           </h1>
         </header>
 
         <section>
-          <p style={{ fontSize: "0.8125rem", fontWeight: 500, color: "var(--muted)", marginBottom: "24px" }}>
-            transcript
-          </p>
+          <div className="transcript-heading">
+            <div className="watch-action-buttons">
+              <button
+                type="button"
+                onClick={() => void copyArticle()}
+                disabled={!transcriptText}
+                data-tip={copyState === "article" ? "copied article" : copyState === "error" ? "copy failed" : "copy article"}
+                aria-label="copy article"
+              >
+                <CopyIcon />
+              </button>
+              {info && (
+                <button
+                  type="button"
+                  onClick={() => saved
+                    ? removeFromWatchLater(videoId)
+                    : addToWatchLater({ id: videoId, title: info.title, channelTitle: info.channelTitle })
+                  }
+                  data-tip={saved ? "remove from read later" : "add to read later"}
+                  aria-label={saved ? "remove from read later" : "add to read later"}
+                  className={saved ? "active" : ""}
+                >
+                  <BookmarkIcon filled={saved} />
+                </button>
+              )}
+            </div>
+            {paragraphs.length > 0 && (
+              <div className="transcript-tools" aria-label="transcript tools">
+                <button
+                  type="button"
+                  onClick={openArticleFind}
+                  data-tip="find in article"
+                  aria-label="find in article"
+                >
+                  <SearchIcon />
+                </button>
+              </div>
+            )}
+          </div>
           {transcriptLoading ? (
             <p style={{ color: "var(--muted)", fontStyle: "italic" }}>loading transcript…</p>
           ) : paragraphs.length === 0 ? (
@@ -184,9 +159,9 @@ export default function Watch() {
               {transcriptError ? "no transcript available for this video." : "no transcript available for this video."}
             </p>
           ) : (
-            <div>
+            <div className="transcript-body">
               {paragraphs.map((p, i) => (
-                <p key={i} style={{ fontSize: "1rem", color: "var(--text)", lineHeight: 1.8, marginBottom: "20px" }}>
+                <p key={i}>
                   {p}
                 </p>
               ))}
@@ -198,15 +173,17 @@ export default function Watch() {
             <button
               onClick={() => removeFromWatchLater(videoId)}
               style={{
-                background: "transparent",
+                width: "100%",
+                background: "var(--chip-bg-soft)",
                 border: "1px solid var(--border)",
                 color: "var(--text)",
-                borderRadius: "999px",
-                padding: "10px 16px",
-                fontSize: "0.875rem",
+                borderRadius: "10px",
+                padding: "14px 18px",
+                fontSize: "0.9375rem",
+                fontWeight: 500,
               }}
             >
-              remove from watch list
+              remove from read later
             </button>
           </footer>
         )}

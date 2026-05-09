@@ -1,0 +1,1 @@
+tubestack is humbly inspired by [via negativa](https://www.reddit.com/r/nassimtaleb/comments/gnf558/how_far_have_you_taken_via_negativa/), [the invisible computer](https://mitpress.mit.edu/9780262640411/the-invisible-computer/), and [freewrite](https://github.com/farzaa/freewrite).

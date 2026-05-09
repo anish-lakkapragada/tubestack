@@ -24,3 +24,10 @@ dist-ssr
 *.sw?
 
 .env.notarize
+
+# Local font drop used for visual testing; do not ship.
+Archive 2/
+
+# Local transcript experiment output. Do not commit third-party transcripts.
+experiments/transcripts/**/*.md
+!experiments/transcripts/README.md

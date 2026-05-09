@@ -1,0 +1,37 @@
+Today we are interviewing Satya Nadella. "We" being me and Dylan Patel, who is founder of SemiAnalysis. Satya, welcome. Thank you. It's great. Thanks for coming over to Atlanta.
+
+Thank you for giving us the tour of the new facility. It's been really cool to see. Absolutely. Satya and Scott Guthrie, Microsoft's EVP of Cloud and AI, give us a tour of their brand new Fairwater 2 data center, the current most powerful in the world.
+
+We've tried to 10x the training capacity every 18 to 24 months. So this would effectively be a 10x increase from what GPT-5 was trained with. So to put it in perspective in the number of optics, the network optics in this building is almost as much as all of Azure across all our data centers two and a half years ago.
+
+It's got like five million network connections. You've got all this bandwidth between different sites in a region and between the two regions. So is this like a big bet on scaling in the. Future, that you anticipate in the future that there's going to be some huge model that will require two whole different regions to train? The goal is to be able to aggregate these.
+
+Flops for a large training job and then put these things together across sites. The reality is you'll use it for training and then you'll use it for data gen, you'll use it for inference in all sorts of ways. It's not like it's going to be used.
+
+Only for one workload forever. Fairwater 4, which you're going to see under construction nearby, will also be on that one petabit network so that we can actually. Link the two at a very high rate. Then we do the AI WAN connecting to Milwaukee where we have multiple other Fairwaters being built. Literally you can see the model parallelism and the data parallelism.
+
+It's kind of built for, essentially, the training jobs, the super pods across this campus. And then with the WAN, you can go to the Wisconsin data center. You literally run a training job with all of them getting aggregated.
+
+What we're seeing right here is a cell with no servers in it yet, no racks. How many racks are in a cell? We don't necessarily share that per se, but… That’s the reason I ask. You'll see upstairs. I'll start counting. You can start counting.
+
+We'll let you start counting. How many cells are there in this building? That part also I can't tell you. Well, division is easy, right? My God, it's kind of loud. Are you looking at this like, "Now I see where my money is going." It's like, "I run a software company.
+
+Welcome to the software company." How big is the design space once you've decided to use the GB200s and the NVLink? How many other decisions are there to be made? There is coupling from the model architecture to what is the physical plan that's optimized.
+
+And it's also scary in that sense, which is, there's going to be a new chip that'll come out. Take Vera Rubin Ultra. That's going to have power density that's going to be so different,. With cooling requirements that are going to be so different. So you kind of don't want to just build all to one spec.
+
+That goes back a little bit to the dialogue we'll have, which is that you want to be scaling in time as opposed to scale once and then be stuck with it. When you look at all the past technological transitions—whether it be railroads or the Internet or replaceable parts, industrialization, the cloud, all of these things—each revolution has gotten much faster in the time it goes from technology discovered to ramp.
+
+And pervasiveness through the economy. Many folks who have been on Dwarkesh's podcast believe this is the final technological revolution or transition, and that this time is very, very different. At least so far in the markets, in three years. We've already skyrocketed to hyperscalers doing $500 billion of capex next year, which is a scale that's unmatched to prior revolutions in terms of speed.
+
+The end state seems to be quite different. Your framing of this seems quite different from what I would call the "AI bro" who's like, "AGI is coming."
+
+I'd like to understand that more. I start with the excitement that I also feel for the idea that maybe after the Industrial Revolution this is the biggest thing. I start with that premise. But at the same time, I'm a little grounded in the. Fact that this is still early innings. We've built some very useful things, we're seeing some great properties, these scaling laws seem to be working.
+
+I'm optimistic that they'll continue to work. Some of it does require real science breakthroughs, but it's also a lot of engineering and what have you. That said, I also sort of take the view that even what has been happening in the last 70 years of computing has also been a march that has helped us move.
+
+I like one of the things that Raj Reddy has as a metaphor for what AI is. He's a Turing Award winner at CMU. He had this, even pre-AGI. He had this metaphor for AI, it should either be a guardian angel or a cognitive amplifier. I love that. It's a. Simple way to think about what this is. Ultimately, what is its human utility?
+
+It is going to be a cognitive amplifier and a guardian angel. If I view it that way, I view it as a tool. But then you can also go very mystical about it and say this is more than a tool. It does all these things, which only.
+
+Humans did before so far. But that has been the case with many technologies in the past. Only humans did a lot of things, and then we had tools that did them. We don't have

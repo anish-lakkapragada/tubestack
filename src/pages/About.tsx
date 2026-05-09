@@ -1,4 +1,6 @@
 import BackButton from "../components/BackButton";
+import MarkdownArticle from "../components/MarkdownArticle";
+import aboutMarkdown from "../content/about.md?raw";
 
 const SKETCH_FONT = "'Kalam', 'Comic Sans MS', 'Marker Felt', cursive";
 
@@ -70,7 +72,7 @@ function Diagram2() {
 }
 
 function Diagram3() {
-  // lock loop: click 5:00 → fullscreen + no backspace → countdown → unlock
+  // lock loop: click 5:00 → fullscreen → countdown → unlock
   return (
     <svg viewBox="0 0 560 200" style={{ width: "100%", height: "auto" }} fill="none" stroke="currentColor">
       <circle cx="70" cy="100" r="44" strokeWidth="2" />
@@ -83,7 +85,7 @@ function Diagram3() {
       <path d="M210,60 L340,60 L340,140 L210,140 Z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
       <text x="275" y="92" textAnchor="middle" fontFamily={SKETCH_FONT} fontSize="14" stroke="none" fill="currentColor">5:00 → 0:00</text>
       <text x="275" y="112" textAnchor="middle" fontFamily={SKETCH_FONT} fontSize="11" stroke="none" fill="currentColor" opacity="0.65">fullscreen · no esc</text>
-      <text x="275" y="128" textAnchor="middle" fontFamily={SKETCH_FONT} fontSize="11" stroke="none" fill="currentColor" opacity="0.65">no backspace · no cmd+w</text>
+      <text x="275" y="128" textAnchor="middle" fontFamily={SKETCH_FONT} fontSize="11" stroke="none" fill="currentColor" opacity="0.65">no cmd+w · no exit</text>
 
       <path d="M355,100 L430,100" strokeWidth="2" strokeLinecap="round" />
       <path d="M421,92 L432,100 L421,108" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -95,73 +97,37 @@ function Diagram3() {
   );
 }
 
+function BookmarkIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden>
+      <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function LockIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden>
+      <rect x="4" y="11" width="16" height="10" rx="2" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default function About() {
   return (
     <main style={{ maxWidth: "680px", margin: "0 auto", padding: "48px 24px", paddingTop: "64px", paddingBottom: "120px" }}>
       <BackButton />
-
-      <h1 style={{ fontSize: "2.25rem", fontWeight: 700, color: "var(--text)", letterSpacing: "-0.02em", marginTop: "40px", marginBottom: "24px", lineHeight: 1.15 }}>
-        images fry our brain.
-      </h1>
-
-      <p style={{ fontSize: "1.0625rem", color: "var(--text)", lineHeight: 1.75, marginBottom: "16px" }}>
-        youtube is the biggest single-location attention sink ever built. thumbnails engineered by teams
-        of people to hijack your glance. autoplay. infinite scroll. the algorithm doesn't serve you —
-        you serve it.
-      </p>
-      <p style={{ fontSize: "1.0625rem", color: "var(--text)", lineHeight: 1.75, marginBottom: "32px" }}>
-        tubestack strips all of that. you search. you read. no recs, no thumbnails, no faces staring back,
-        no autoplay. a youtube video becomes what it always could've been: a blog post.
-      </p>
-
-      <h2 style={{ fontSize: "0.8125rem", fontWeight: 500, color: "var(--muted)", marginBottom: "14px" }}>
-        the idea
-      </h2>
-      <div style={{ color: "var(--text)", marginBottom: "44px" }}>
-        <Diagram1 />
-      </div>
-
-      <h2 style={{ fontSize: "0.8125rem", fontWeight: 500, color: "var(--muted)", marginBottom: "14px" }}>
-        how it works
-      </h2>
-      <p style={{ fontSize: "1rem", color: "var(--text)", lineHeight: 1.7, marginBottom: "20px" }}>
-        this app doesn't talk to youtube's official data api (which would need a key, an .env file, and
-        a daily quota). it talks to <em style={{ fontStyle: "italic" }}>innertube</em> — the private
-        api youtube's own mobile/web apps use. no auth, no quota.
-      </p>
-      <p style={{ fontSize: "1rem", color: "var(--text)", lineHeight: 1.7, marginBottom: "24px" }}>
-        the trick: webview can't reach innertube directly (cors blocks it), so all http calls tunnel
-        through the rust side of tauri. rust doesn't care about cors. it tells youtube "i'm
-        youtube.com" and youtube believes it.
-      </p>
-      <div style={{ color: "var(--text)", marginBottom: "44px" }}>
-        <Diagram2 />
-      </div>
-
-      <h2 style={{ fontSize: "0.8125rem", fontWeight: 500, color: "var(--muted)", marginBottom: "14px" }}>
-        the 5-minute lock
-      </h2>
-      <p style={{ fontSize: "1rem", color: "var(--text)", lineHeight: 1.7, marginBottom: "24px" }}>
-        attention is a muscle and it's gotten weak. click <strong>lock 5:00</strong> at the bottom to
-        force yourself to actually finish reading. fullscreen turns on. backspace, esc, cmd+w, cmd+left
-        — all neutered. no exit until the timer hits zero. no cancel button. that's the whole point.
-      </p>
-      <div style={{ color: "var(--text)", marginBottom: "56px" }}>
-        <Diagram3 />
-      </div>
-
-      <div style={{ paddingTop: "40px", borderTop: "1px solid var(--border)", fontSize: "0.9375rem", color: "var(--desc)", lineHeight: 1.7 }}>
-        <p style={{ marginBottom: "8px" }}>built by anish. yale '27.</p>
-        <p>
-          contact:{" "}
-          <a
-            href="mailto:anish.lakkapragada@yale.edu"
-            style={{ color: "var(--text)", textDecoration: "underline", textUnderlineOffset: "2px" }}
-          >
-            anish.lakkapragada@yale.edu
-          </a>
-        </p>
-      </div>
+      <MarkdownArticle
+        markdown={aboutMarkdown}
+        slots={{
+          idea: <Diagram1 />,
+          "how-it-works": <Diagram2 />,
+          lock: <Diagram3 />,
+          bookmark: <BookmarkIcon />,
+          "lock-icon": <LockIcon />,
+        }}
+      />
     </main>
   );
 }
