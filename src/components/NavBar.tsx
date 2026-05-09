@@ -196,7 +196,7 @@ export default function NavBar() {
             </div>
           </span>
           {!hasUsedLock && (
-            <span className="lock-hint">force yourself to stop searching</span>
+            <span className="lock-hint">lock mode</span>
           )}
           <span className="sep">·</span>
           <button
