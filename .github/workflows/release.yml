@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       release-id: ${{ steps.create-release.outputs.release_id }}
+      version: ${{ steps.version.outputs.version }}
       tag-name: ${{ steps.version.outputs.tag_name }}
       release-name: ${{ steps.version.outputs.release_name }}
     steps:
@@ -25,6 +26,7 @@ jobs:
           VERSION="$(node -p "require('./package.json').version")"
           TAG_NAME="v${VERSION}-build.${GITHUB_RUN_NUMBER}"
           RELEASE_NAME="tubestack v${VERSION} build ${GITHUB_RUN_NUMBER}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "tag_name=${TAG_NAME}" >> "$GITHUB_OUTPUT"
           echo "release_name=${RELEASE_NAME}" >> "$GITHUB_OUTPUT"
 
@@ -51,12 +53,12 @@ jobs:
       matrix:
         include:
           - label: macos-apple-silicon
-            platform: macos-latest
+            platform: macos-15
             target: aarch64-apple-darwin
             args: --target aarch64-apple-darwin
             asset-name: macos-arm64
           - label: macos-intel
-            platform: macos-13
+            platform: macos-15-intel
             target: x86_64-apple-darwin
             args: --target x86_64-apple-darwin
             asset-name: macos-x64
@@ -152,5 +154,5 @@ jobs:
         with:
           releaseId: ${{ needs.prepare-release.outputs.release-id }}
           args: ${{ matrix.args }}
-          assetNamePattern: 'tubestack-v__VERSION__-${{ matrix.asset-name }}.[ext]'
+          assetNamePattern: 'tubestack-v${{ needs.prepare-release.outputs.version }}-${{ matrix.asset-name }}.[ext]'
           includeUpdaterJson: false
