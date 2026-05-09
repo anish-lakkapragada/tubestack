@@ -2,8 +2,8 @@ name: Release
 
 on:
   push:
-    tags:
-      - 'v*'
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -43,7 +43,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: 'tubestack ${{ github.ref_name }}'
-          releaseDraft: true
+          tagName: build-${{ github.run_number }}
+          releaseName: 'tubestack build ${{ github.run_number }}'
+          releaseDraft: false
           prerelease: false
