@@ -1,6 +1,6 @@
 # tubestack
 
-[download tubestack here.](https://anishlk.com/tubestack)
+[download tubestack](https://anishlk.com/tubestack)
 
 tubestack is a minimal desktop application for reading youtube content in a more clean, organized way. it is designed to cultivate self-reflection and intentful exploration in one's interests.
 
