@@ -7,6 +7,7 @@ const args = rawArgs.filter((arg) => arg !== "--fresh");
 const command = process.platform === "win32" ? "npx.cmd" : "npx";
 const child = spawn(command, ["tauri", ...args], {
   stdio: "inherit",
+  shell: process.platform === "win32",
   env: {
     ...process.env,
     ...(fresh ? { VITE_TUBESTACK_FRESH: "1" } : {}),
