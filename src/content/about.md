@@ -1,6 +1,6 @@
 # tubestack feature guide 
 
-tubestack is a minimal desktop application to enable you to read youtube content in a more clean, organized way. it is designed to cultivate self-reflection and intentful exploration in one's interests. 
+tubestack is a minimal desktop application for reading youtube content in a more clean, organized way. it is designed to cultivate self-reflection and intentful exploration in one's interests. 
 
 below is a guide explaining a little bit on how tubestack works and some features we hope you enjoy. 
 
