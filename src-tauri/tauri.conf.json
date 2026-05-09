@@ -37,7 +37,8 @@
     ],
     "macOS": {
       "minimumSystemVersion": "10.15",
-      "signingIdentity": "Developer ID Application: Anish Lakkapragada (W3JWJS9PHH)"
+      "signingIdentity": "Developer ID Application: Anish Lakkapragada (W3JWJS9PHH)",
+      "providerShortName": "W3JWJS9PHH"
     }
   }
 }
