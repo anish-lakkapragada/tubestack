@@ -129,8 +129,15 @@ jobs:
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           security import "$CERTIFICATE_PATH" -P "$APPLE_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
           security list-keychain -d user -s "$KEYCHAIN_PATH"
+
+          if ! security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -q "Developer ID Application"; then
+            echo "No Developer ID Application signing identity was imported."
+            echo "APPLE_CERTIFICATE_BASE64 must be a base64-encoded .p12 exported from Keychain Access with the private key, not a .cer file."
+            echo "In Keychain Access, export from My Certificates after expanding Developer ID Application and confirming a private key appears underneath it."
+            exit 1
+          fi
+
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
-          security find-identity -v -p codesigning "$KEYCHAIN_PATH"
 
       - uses: tauri-apps/tauri-action@v0
         env:
