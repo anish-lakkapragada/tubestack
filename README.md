@@ -2,7 +2,7 @@
 
 [download tubestack](https://anishlk.com/tubestack)
 
-tubestack is a minimal desktop application for reading youtube content in a more clean, organized way. it is designed to cultivate self-reflection and intentful exploration in one's interests.
+tubestack is a minimal desktop application for reading youtube content (videos & shorts) in a more clean, organized way. it is designed to cultivate self-reflection and intentful exploration in one's interests.
 
 i've been using tubestack locally for over three months and would be honored if you gave it a try. tubestack is 100% free and local.
 
