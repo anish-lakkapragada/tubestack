@@ -112,21 +112,33 @@ function mapVideo(v: any): VideoResult {
 
 function mapShort(s: any): VideoResult {
   const endpoint = s.on_tap_endpoint ?? s.on_tap ?? s.navigation_endpoint;
-  const url: string = endpoint?.metadata?.url ?? endpoint?.payload?.url ?? "";
+  const reelEndpoint = s.endpoint;
+  const url: string =
+    endpoint?.metadata?.url ??
+    endpoint?.payload?.url ??
+    reelEndpoint?.metadata?.url ??
+    reelEndpoint?.payload?.url ??
+    "";
   const idFromUrl = url.match(/\/shorts\/([^/?&]+)/)?.[1];
-  const id = endpoint?.payload?.videoId ?? idFromUrl ?? s.entity_id ?? "";
+  const id = endpoint?.payload?.videoId ?? reelEndpoint?.payload?.videoId ?? idFromUrl ?? s.id ?? s.entity_id ?? "";
   return {
     id,
-    title: textOf(s.overlay_metadata?.primary_text) || s.accessibility_text || "",
+    title: textOf(s.overlay_metadata?.primary_text) || textOf(s.title) || s.accessibility_text || s.accessibility_label || "",
     description: "",
     channelTitle: "",
     publishedText: "",
     duration: "",
     durationSeconds: 0,
-    viewCount: textOf(s.overlay_metadata?.secondary_text),
+    viewCount: textOf(s.overlay_metadata?.secondary_text) || textOf(s.views),
     isShort: true,
     isLive: false,
   };
+}
+
+function mapVideoNode(node: any): VideoResult | null {
+  if (node.is?.(YTNodes.Video) || node.type === "Video") return mapVideo(node);
+  if (node.type === "ShortsLockupView" || node.type === "ReelItem") return mapShort(node);
+  return null;
 }
 
 function mapChannel(c: any): ChannelResult {
@@ -154,10 +166,8 @@ export async function searchVideos(query: string): Promise<SearchVideosResult> {
   lastSearchObject = search;
   const videos: VideoResult[] = [];
   for (const node of search.results ?? []) {
-    if (node.is?.(YTNodes.Video) || node.type === "Video") videos.push(mapVideo(node));
-    else if (node.type === "ShortsLockupView" || node.type === "ReelItem") {
-      videos.push(mapShort(node));
-    }
+    const video = mapVideoNode(node);
+    if (video) videos.push(video);
   }
   return { videos, continuation: search };
 }
@@ -167,7 +177,8 @@ export async function loadMoreVideos(continuation: any): Promise<SearchVideosRes
   const next = await continuation.getContinuation();
   const videos: VideoResult[] = [];
   for (const node of next.results ?? []) {
-    if (node.is?.(YTNodes.Video) || node.type === "Video") videos.push(mapVideo(node));
+    const video = mapVideoNode(node);
+    if (video) videos.push(video);
   }
   return { videos, continuation: next };
 }
@@ -188,6 +199,11 @@ export interface ChannelArchiveResult {
   continuation?: any;
 }
 
+interface ChannelContinuation {
+  videos?: any;
+  shorts?: any;
+}
+
 export async function resolveChannel(channelId: string): Promise<ChannelArchiveResult> {
   const yt = await getClient();
   const ch = await yt.getChannel(channelId);
@@ -197,25 +213,64 @@ export async function resolveChannel(channelId: string): Promise<ChannelArchiveR
     description: textOf(ch.metadata?.description),
     subscribers: textOf((ch.header as any)?.subscribers) || textOf((ch.header as any)?.subscriber_count),
   };
-  let videosFeed: any;
-  try {
-    videosFeed = await ch.getVideos();
-  } catch {
-    videosFeed = null;
-  }
+  const [videosFeed, shortsFeed] = await Promise.all([
+    ch.getVideos().catch(() => null),
+    ch.getShorts().catch(() => null),
+  ]);
   const videos: VideoResult[] = [];
   for (const node of videosFeed?.videos ?? []) {
-    videos.push(mapVideo(node));
+    const video = mapVideoNode(node);
+    if (video) videos.push(video);
   }
-  return { info, videos, continuation: videosFeed };
+  for (const node of shortsFeed?.videos ?? []) {
+    const video = mapVideoNode(node);
+    if (video) videos.push(video);
+  }
+  const continuation: ChannelContinuation = {
+    videos: videosFeed?.getContinuation ? videosFeed : undefined,
+    shorts: shortsFeed?.getContinuation ? shortsFeed : undefined,
+  };
+  return {
+    info,
+    videos,
+    continuation: continuation.videos || continuation.shorts ? continuation : undefined,
+  };
 }
 
 export async function loadMoreChannelVideos(continuation: any): Promise<{ videos: VideoResult[]; continuation?: any }> {
-  if (!continuation?.getContinuation) return { videos: [] };
-  const next = await continuation.getContinuation();
+  if (continuation?.getContinuation) {
+    const next = await continuation.getContinuation();
+    const videos: VideoResult[] = [];
+    for (const node of next.videos ?? []) {
+      const video = mapVideoNode(node);
+      if (video) videos.push(video);
+    }
+    return { videos, continuation: next };
+  }
+
+  const current = continuation as ChannelContinuation;
+  if (!current?.videos?.getContinuation && !current?.shorts?.getContinuation) return { videos: [] };
+  const [nextVideos, nextShorts] = await Promise.all([
+    current.videos?.getContinuation ? current.videos.getContinuation().catch(() => null) : Promise.resolve(null),
+    current.shorts?.getContinuation ? current.shorts.getContinuation().catch(() => null) : Promise.resolve(null),
+  ]);
   const videos: VideoResult[] = [];
-  for (const node of next.videos ?? []) videos.push(mapVideo(node));
-  return { videos, continuation: next };
+  for (const node of nextVideos?.videos ?? []) {
+    const video = mapVideoNode(node);
+    if (video) videos.push(video);
+  }
+  for (const node of nextShorts?.videos ?? []) {
+    const video = mapVideoNode(node);
+    if (video) videos.push(video);
+  }
+  const nextContinuation: ChannelContinuation = {
+    videos: nextVideos?.getContinuation ? nextVideos : undefined,
+    shorts: nextShorts?.getContinuation ? nextShorts : undefined,
+  };
+  return {
+    videos,
+    continuation: nextContinuation.videos || nextContinuation.shorts ? nextContinuation : undefined,
+  };
 }
 
 export interface VideoDetail {

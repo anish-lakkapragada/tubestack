@@ -1,8 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { ChannelInfo, VideoResult, resolveChannel, loadMoreChannelVideos } from "../lib/youtube";
 import ResultCard from "../components/ResultCard";
 import BackButton from "../components/BackButton";
+import FilterTabs from "../components/FilterTabs";
+
+type Filter = "all" | "videos" | "shorts" | "live";
 
 export default function Channel() {
   const [params] = useSearchParams();
@@ -13,6 +16,7 @@ export default function Channel() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
+  const [filter, setFilter] = useState<Filter>("all");
 
   useEffect(() => {
     if (!channelId) { setLoading(false); return; }
@@ -27,6 +31,15 @@ export default function Channel() {
       .catch((e) => setError(String(e?.message ?? e)))
       .finally(() => setLoading(false));
   }, [channelId]);
+
+  const filteredVideos = useMemo(() => {
+    const real = videos.filter((v) => v.id && v.title);
+    if (filter === "all") return real;
+    if (filter === "videos") return real.filter((v) => !v.isShort && !v.isLive);
+    if (filter === "shorts") return real.filter((v) => v.isShort);
+    if (filter === "live") return real.filter((v) => v.isLive);
+    return real;
+  }, [videos, filter]);
 
   async function onLoadMore() {
     if (!continuation || loadingMore) return;
@@ -62,11 +75,14 @@ export default function Channel() {
       )}
       <section>
         <h3 style={{ fontSize: "0.8125rem", fontWeight: 500, color: "var(--muted)", marginBottom: "10px" }}>
-          videos
+          videos & shorts
         </h3>
-        {videos.map((v) => <ResultCard key={v.id} v={v} />)}
-        {!loading && videos.length === 0 && (
-          <p style={{ color: "var(--muted)", fontSize: "0.8125rem", padding: "16px 0" }}>no videos.</p>
+        <FilterTabs value={filter} onChange={setFilter} />
+        <div style={{ marginTop: "16px" }}>
+          {filteredVideos.map((v) => <ResultCard key={v.id} v={v} />)}
+        </div>
+        {!loading && filteredVideos.length === 0 && (
+          <p style={{ color: "var(--muted)", fontSize: "0.8125rem", padding: "16px 0" }}>no videos matched.</p>
         )}
         {continuation && (
           <button
