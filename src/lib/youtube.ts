@@ -135,10 +135,61 @@ function mapShort(s: any): VideoResult {
   };
 }
 
+// Modern channel/search layouts return every item as a LockupView whose
+// `content_type` ("VIDEO" | "SHORTS" | "PLAYLIST" | …) is the real classifier.
+// youtubei.js 10.5 doesn't surface these through `feed.videos`, so we map them
+// directly. Duration/thumbnail live on `content_image`, which YouTube often
+// omits here, so we lean on content_type and the metadata rows instead.
+function mapLockup(node: any): VideoResult | null {
+  const contentType = String(node.content_type ?? "").toUpperCase();
+  if (contentType !== "VIDEO" && contentType !== "SHORTS") return null;
+  const id = node.content_id || node.on_tap_endpoint?.payload?.videoId || "";
+  if (!id) return null;
+  const parts: string[] = [];
+  for (const row of node.metadata?.metadata?.metadata_rows ?? []) {
+    for (const part of row.metadata_parts ?? []) {
+      const t = textOf(part.text);
+      if (t) parts.push(t);
+    }
+  }
+  return {
+    id,
+    title: textOf(node.metadata?.title),
+    description: "",
+    channelTitle: "",
+    publishedText: parts.find((p) => /ago|stream|premier/i.test(p)) ?? "",
+    duration: "",
+    durationSeconds: 0,
+    viewCount: parts.find((p) => /view|watching/i.test(p)) ?? "",
+    isShort: contentType === "SHORTS",
+    isLive: parts.some((p) => /watching now|\blive\b/i.test(p)),
+  };
+}
+
 function mapVideoNode(node: any): VideoResult | null {
-  if (node.is?.(YTNodes.Video) || node.type === "Video") return mapVideo(node);
   if (node.type === "ShortsLockupView" || node.type === "ReelItem") return mapShort(node);
+  if (node.type === "LockupView") return mapLockup(node);
+  // Match Video plus the grid/compact variants channels return (GridVideo,
+  // CompactVideo, …) — feed.videos already pre-filters to video-type nodes.
+  if (node.is?.(YTNodes.Video) || /Video$/.test(node.type ?? "")) return mapVideo(node);
   return null;
+}
+
+// Nodes to map out of a channel feed. `feed.videos` only collects classic
+// Video nodes, so it misses the LockupView grid modern channels return; pull
+// those from the parser memo and dedupe against whatever `videos` did return.
+function channelFeedNodes(feed: any): any[] {
+  if (!feed) return [];
+  const seen = new Set<any>();
+  const nodes: any[] = [];
+  for (const node of feed.videos ?? []) {
+    nodes.push(node);
+    seen.add(node);
+  }
+  for (const node of feed.memo?.get?.("LockupView") ?? []) {
+    if (!seen.has(node)) nodes.push(node);
+  }
+  return nodes;
 }
 
 function mapChannel(c: any): ChannelResult {
@@ -218,11 +269,11 @@ export async function resolveChannel(channelId: string): Promise<ChannelArchiveR
     ch.getShorts().catch(() => null),
   ]);
   const videos: VideoResult[] = [];
-  for (const node of videosFeed?.videos ?? []) {
+  for (const node of channelFeedNodes(videosFeed)) {
     const video = mapVideoNode(node);
     if (video) videos.push(video);
   }
-  for (const node of shortsFeed?.videos ?? []) {
+  for (const node of channelFeedNodes(shortsFeed)) {
     const video = mapVideoNode(node);
     if (video) videos.push(video);
   }
@@ -241,7 +292,7 @@ export async function loadMoreChannelVideos(continuation: any): Promise<{ videos
   if (continuation?.getContinuation) {
     const next = await continuation.getContinuation();
     const videos: VideoResult[] = [];
-    for (const node of next.videos ?? []) {
+    for (const node of channelFeedNodes(next)) {
       const video = mapVideoNode(node);
       if (video) videos.push(video);
     }
@@ -255,11 +306,11 @@ export async function loadMoreChannelVideos(continuation: any): Promise<{ videos
     current.shorts?.getContinuation ? current.shorts.getContinuation().catch(() => null) : Promise.resolve(null),
   ]);
   const videos: VideoResult[] = [];
-  for (const node of nextVideos?.videos ?? []) {
+  for (const node of channelFeedNodes(nextVideos)) {
     const video = mapVideoNode(node);
     if (video) videos.push(video);
   }
-  for (const node of nextShorts?.videos ?? []) {
+  for (const node of channelFeedNodes(nextShorts)) {
     const video = mapVideoNode(node);
     if (video) videos.push(video);
   }
